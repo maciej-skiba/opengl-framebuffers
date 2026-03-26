@@ -94,9 +94,11 @@ void Gui::ShowControlsInfo()
 
     ImGui::Text("Controls:");
     ImGui::Separator();
-    ImGui::Text("WASD - Movement");
+    ImGui::Text("WSAD - Movement");
     ImGui::Text("Space - Up");
     ImGui::Text("Shift - Down");
+    ImGui::Text("------------");
+    ImGui::Text("Keys 1-5 - Pick PostProcessing");
 
     ImGui::End();
 }

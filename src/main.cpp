@@ -4,6 +4,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <unordered_map>
 
 #include "vertices.hpp" 
 #include "camera.hpp"
@@ -125,18 +126,58 @@ int main(void)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     }
 
-    const char* postProcVertShaderPath = "../shaders/postProc_vert.glsl";
-    const char* postProcFragShaderPath = "../shaders/postProc_frag.glsl";
+    const char* postProcVertShaderPath_1 = "../shaders/postProc_vert.glsl";
+    const char* postProcFragShaderPath_1 = "../shaders/postProc_frag1.glsl";
 
-    Shader postProcShader(postProcVertShaderPath, postProcFragShaderPath);
-    postProcShader.UseProgram();
-    postProcShader.SetUniformInt("screenTexture", 0);
+    Shader postProcShader1(postProcVertShaderPath_1, postProcFragShaderPath_1);
+    postProcShader1.UseProgram();
+    postProcShader1.SetUniformInt("screenTexture", 0);
+
+    const char* postProcVertShaderPath_2 = "../shaders/postProc_vert.glsl";
+    const char* postProcFragShaderPath_2 = "../shaders/postProc_frag2.glsl";
+
+    Shader postProcShader2(postProcVertShaderPath_2, postProcFragShaderPath_2);
+    postProcShader2.UseProgram();
+    postProcShader2.SetUniformInt("screenTexture", 0);
+    
+    const char* postProcVertShaderPath_3 = "../shaders/postProc_vert.glsl";
+    const char* postProcFragShaderPath_3 = "../shaders/postProc_frag3.glsl";
+
+    Shader postProcShader3(postProcVertShaderPath_3, postProcFragShaderPath_3);
+    postProcShader3.UseProgram();
+    postProcShader3.SetUniformInt("screenTexture", 0);
+
+    const char* postProcVertShaderPath_4 = "../shaders/postProc_vert.glsl";
+    const char* postProcFragShaderPath_4 = "../shaders/postProc_frag4.glsl";
+
+    Shader postProcShader4(postProcVertShaderPath_4, postProcFragShaderPath_4);
+    postProcShader4.UseProgram();
+    postProcShader4.SetUniformInt("screenTexture", 0);
+
+    const char* postProcVertShaderPath_5 = "../shaders/postProc_vert.glsl";
+    const char* postProcFragShaderPath_5 = "../shaders/postProc_frag5.glsl";
+
+    Shader postProcShader5(postProcVertShaderPath_5, postProcFragShaderPath_5);
+    postProcShader5.UseProgram();
+    postProcShader5.SetUniformInt("screenTexture", 0);
+
+    
+    std::unordered_map<ushort, Shader> postprocessingShaders =
+    {
+        { 1, postProcShader1 },
+        { 2, postProcShader2 },
+        { 3, postProcShader3 },
+        { 4, postProcShader4 },
+        { 5, postProcShader5 },
+    };
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // ---------------------------------
 
     std::cout << "Entering main loop\n";
+
+    ushort currentPostProcShaderIndex = 1;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -179,7 +220,7 @@ int main(void)
 
         // --postprocessing--
         
-        postProcShader.UseProgram();
+        postprocessingShaders.at(currentPostProcShaderIndex).UseProgram();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -194,7 +235,7 @@ int main(void)
 
         Gui::ImGuiFrame(window);
         glfwSwapBuffers(window);
-        ProcessInput(window, mainCamera.get());
+        ProcessInput(window, mainCamera.get(), currentPostProcShaderIndex);
         mainCamera->updateCameraVectors();
         glfwPollEvents();
     }

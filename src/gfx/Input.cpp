@@ -5,7 +5,7 @@
 static bool fPressedLastFrame = false;
 bool flashlightOn = false; // definicja globalnej
 
-void ProcessInput(GLFWwindow* window, Camera* camera)
+void ProcessInput(GLFWwindow* window, Camera* camera, ushort &postProcShaderIndex)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -16,6 +16,13 @@ void ProcessInput(GLFWwindow* window, Camera* camera)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera->ProcessKeyboardWithDepthLimit(RIGHT);    
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camera->ProcessKeyboardWithDepthLimit(DOWN);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)     camera->ProcessKeyboardWithDepthLimit(UP);
+
+    // Choosing Framebuffers
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) postProcShaderIndex = 1;
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) postProcShaderIndex = 2;
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) postProcShaderIndex = 3;
+    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) postProcShaderIndex = 4;
+    if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) postProcShaderIndex = 5;
 
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
         if (!fPressedLastFrame) { flashlightOn = !flashlightOn; fPressedLastFrame = true; }
