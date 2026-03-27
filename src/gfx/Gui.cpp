@@ -97,8 +97,9 @@ void Gui::ShowControlsInfo()
     ImGui::Text("WSAD - Movement");
     ImGui::Text("Space - Up");
     ImGui::Text("Shift - Down");
-    ImGui::Text("--------------");
-    ImGui::Text("Postprocessing");
+    ImGui::NewLine();
+    ImGui::Text("Postprocessing:");
+    ImGui::Separator();
     ImGui::Text("Key 1 - Default");
     ImGui::Text("Key 2 - Blur");
     ImGui::Text("Key 3 - Highlight edges");

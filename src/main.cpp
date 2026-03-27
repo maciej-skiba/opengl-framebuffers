@@ -39,8 +39,8 @@ int main(void)
 
     unsigned int planeVao, planeVbo;
     
-    const char* cubeVertShaderPath = "../shaders/cube/cube_vert.glsl";
-    const char* cubeFragShaderPath = "../shaders/cube/cube_frag.glsl";
+    const char* cubeVertShaderPath = "../shaders/plane/plane_vert.glsl";
+    const char* cubeFragShaderPath = "../shaders/plane/plane_frag.glsl";
 
     Shader planeShader(cubeVertShaderPath, cubeFragShaderPath);
 
