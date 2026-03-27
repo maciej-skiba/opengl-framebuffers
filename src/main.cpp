@@ -37,32 +37,24 @@ int main(void)
 
     stbi_set_flip_vertically_on_load(true);
 
-    unsigned int boxVao, boxVbo;
     unsigned int planeVao, planeVbo;
     
-    const char* cubeVertShaderPath = "../shaders/cube_vert.glsl";
-    const char* cubeFragShaderPath = "../shaders/cube_frag.glsl";
+    const char* cubeVertShaderPath = "../shaders/cube/cube_vert.glsl";
+    const char* cubeFragShaderPath = "../shaders/cube/cube_frag.glsl";
 
-    Shader cubeShader(cubeVertShaderPath, cubeFragShaderPath);
+    Shader planeShader(cubeVertShaderPath, cubeFragShaderPath);
+
+    const char* houseVertShaderPath = "../shaders/house/house_vert.glsl";
+    const char* houseFragShaderPath = "../shaders/house/house_frag.glsl";
         
+    Shader houseShader(houseVertShaderPath, houseFragShaderPath);
+
     int numOfVerticesInBox = 36;
-    int amountOfCubes = 2;
-
-    glm::vec3 cubePositions[] = {
-        glm::vec3(-3.0f, 1.0f, 0.0f),
-        glm::vec3(3.0f, 1.0f, 0.0f),
-    };
-
-    glm::vec3 cubeColors[] = {
-        glm::vec3(0.4, 1, 0.4), //green
-        glm::vec3(0.4, 1, 0.4), //green
-    };
 
     glm::vec3 planePosition = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 planeColor =  glm::vec3(0.7, 0.7, 0.7);  //gray
+    glm::vec3 planeColor =  glm::vec3(0.15, 0.5, 0.1);  //green
     
     int boxBufferSize = numOfVerticesInBox * 6;
-    CreateBoxVao(boxVao, boxVbo, boxVertices, boxBufferSize);
     CreateBoxVao(planeVao, planeVbo, planeVertices, boxBufferSize);
 
     //screen quad for postprocessing
@@ -90,7 +82,9 @@ int main(void)
     float nearClippingPlane = 0.1f;
     float farClippingPlane = 100.0f;
 
-    glm::mat4 cubeModelMatrix = identityMatrix;
+    glm::mat4 planeModelMatrix = identityMatrix;
+    glm::mat4 houseModelMatrix = identityMatrix;
+
     glm::mat4 projectionMatrix = 
         glm::perspective(
             glm::radians(mainCamera->Zoom),
@@ -98,8 +92,11 @@ int main(void)
             nearClippingPlane,
             farClippingPlane);
 
-    cubeShader.UseProgram();
-    cubeShader.SetUniformMat4("projection", projectionMatrix);
+    planeShader.UseProgram();
+    planeShader.SetUniformMat4("projection", projectionMatrix);
+
+    houseShader.UseProgram();
+    houseShader.SetUniformMat4("projection", projectionMatrix);
 
     // ---CUSTOM FRAMEBUFFER OBJECTS---
 
@@ -126,42 +123,41 @@ int main(void)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     }
 
-    const char* postProcVertShaderPath_1 = "../shaders/postProc_vert.glsl";
-    const char* postProcFragShaderPath_1 = "../shaders/postProc_frag1.glsl";
+    const char* postProcVertShaderPath_1 = "../shaders/postprocessing/postProc_vert.glsl";
+    const char* postProcFragShaderPath_1 = "../shaders/postprocessing/postProc_frag1.glsl";
 
     Shader postProcShader1(postProcVertShaderPath_1, postProcFragShaderPath_1);
     postProcShader1.UseProgram();
     postProcShader1.SetUniformInt("screenTexture", 0);
 
-    const char* postProcVertShaderPath_2 = "../shaders/postProc_vert.glsl";
-    const char* postProcFragShaderPath_2 = "../shaders/postProc_frag2.glsl";
+    const char* postProcVertShaderPath_2 = "../shaders/postprocessing/postProc_vert.glsl";
+    const char* postProcFragShaderPath_2 = "../shaders/postprocessing/postProc_frag2.glsl";
 
     Shader postProcShader2(postProcVertShaderPath_2, postProcFragShaderPath_2);
     postProcShader2.UseProgram();
     postProcShader2.SetUniformInt("screenTexture", 0);
     
-    const char* postProcVertShaderPath_3 = "../shaders/postProc_vert.glsl";
-    const char* postProcFragShaderPath_3 = "../shaders/postProc_frag3.glsl";
+    const char* postProcVertShaderPath_3 = "../shaders/postprocessing/postProc_vert.glsl";
+    const char* postProcFragShaderPath_3 = "../shaders/postprocessing/postProc_frag3.glsl";
 
     Shader postProcShader3(postProcVertShaderPath_3, postProcFragShaderPath_3);
     postProcShader3.UseProgram();
     postProcShader3.SetUniformInt("screenTexture", 0);
 
-    const char* postProcVertShaderPath_4 = "../shaders/postProc_vert.glsl";
-    const char* postProcFragShaderPath_4 = "../shaders/postProc_frag4.glsl";
+    const char* postProcVertShaderPath_4 = "../shaders/postprocessing/postProc_vert.glsl";
+    const char* postProcFragShaderPath_4 = "../shaders/postprocessing/postProc_frag4.glsl";
 
     Shader postProcShader4(postProcVertShaderPath_4, postProcFragShaderPath_4);
     postProcShader4.UseProgram();
     postProcShader4.SetUniformInt("screenTexture", 0);
 
-    const char* postProcVertShaderPath_5 = "../shaders/postProc_vert.glsl";
-    const char* postProcFragShaderPath_5 = "../shaders/postProc_frag5.glsl";
+    const char* postProcVertShaderPath_5 = "../shaders/postprocessing/postProc_vert.glsl";
+    const char* postProcFragShaderPath_5 = "../shaders/postprocessing/postProc_frag5.glsl";
 
     Shader postProcShader5(postProcVertShaderPath_5, postProcFragShaderPath_5);
     postProcShader5.UseProgram();
     postProcShader5.SetUniformInt("screenTexture", 0);
 
-    
     std::unordered_map<ushort, Shader> postprocessingShaders =
     {
         { 1, postProcShader1 },
@@ -175,9 +171,15 @@ int main(void)
 
     // ---------------------------------
 
+    const char* houseModelPath = "../assets/models/house/HouseSuburban.obj";
+    Model houseModel(houseModelPath);
+
     std::cout << "Entering main loop\n";
 
     ushort currentPostProcShaderIndex = 1;
+
+    glm::vec3 dirLightPosition = glm::vec3(-20.0f, 50.0f, 0.0f);
+    glm::vec3 dirLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -188,31 +190,33 @@ int main(void)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-
-        cubeShader.UseProgram();
-        cubeShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
         
-        // -cubes-
-        glBindVertexArray(boxVao);
+        // -house-
+        houseShader.UseProgram();
+        houseModelMatrix = glm::translate(identityMatrix, planePosition);
+        houseModelMatrix = glm::scale(houseModelMatrix, glm::vec3(0.002f));
+        houseShader.SetUniformMat4("model", houseModelMatrix);
+        houseShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
 
-        for (int cube = 0; cube < amountOfCubes; cube++)
-        {
-            cubeModelMatrix = glm::translate(identityMatrix, cubePositions[cube]);
-            cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.5f));
-            cubeShader.SetUniformMat4("model", cubeModelMatrix);
-            cubeShader.SetUniformVec3("lightColor", cubeColors[cube]);
+        houseShader.SetUniformVec3("cameraPos", mainCamera->Position);
+        houseShader.SetUniformVec3("dirLight[0].position", dirLightPosition);
+        houseShader.SetUniformVec3("dirLight[0].ambient", dirLightColor * 0.1f);
+        houseShader.SetUniformVec3("dirLight[0].diffuse", dirLightColor);
+        houseShader.SetUniformVec3("dirLight[0].specular", dirLightColor);
 
-            glDrawArrays(GL_TRIANGLES, 0, numOfVerticesInBox);
-        }
+        houseModel.Draw(houseShader);
+
         // -------
 
         // -plane-
         glBindVertexArray(planeVao);
 
-        cubeModelMatrix = glm::translate(identityMatrix, planePosition);
-        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.5f));
-        cubeShader.SetUniformMat4("model", cubeModelMatrix);
-        cubeShader.SetUniformVec3("lightColor", planeColor);
+        planeShader.UseProgram();
+        planeShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
+        planeModelMatrix = glm::translate(identityMatrix, planePosition);
+        planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(0.5f));
+        planeShader.SetUniformMat4("model", planeModelMatrix);
+        planeShader.SetUniformVec3("lightColor", planeColor);
 
         glDrawArrays(GL_TRIANGLES, 0, numOfVerticesInBox);
 
@@ -240,9 +244,7 @@ int main(void)
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &boxVao);
     glDeleteVertexArrays(1, &planeVao);
-    glDeleteBuffers(1, &boxVbo);
     glDeleteBuffers(1, &planeVbo);
     glDeleteFramebuffers(1, &fbo);
 
