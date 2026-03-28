@@ -105,6 +105,8 @@ void Gui::ShowControlsInfo()
     ImGui::Text("Key 3 - Highlight edges");
     ImGui::Text("Key 4 - Retro");
     ImGui::Text("Key 5 - Negative");
+    ImGui::Separator();
+    ImGui::Text("F - Antialiasing (MSAA)");
 
     ImGui::End();
 }

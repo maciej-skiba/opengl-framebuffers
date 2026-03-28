@@ -2,10 +2,9 @@
 #include "gfx/Input.hpp"
 #include "core/Window.hpp"
 
-static bool fPressedLastFrame = false;
-bool flashlightOn = false; // definicja globalnej
+bool spacePressedLastFrame = false;
 
-void ProcessInput(GLFWwindow* window, Camera* camera, ushort &postProcShaderIndex)
+void ProcessInput(GLFWwindow* window, Camera* camera, short &postProcShaderIndex, bool &antialiasingOn)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -15,7 +14,7 @@ void ProcessInput(GLFWwindow* window, Camera* camera, ushort &postProcShaderInde
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera->ProcessKeyboardWithDepthLimit(LEFT);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera->ProcessKeyboardWithDepthLimit(RIGHT);    
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camera->ProcessKeyboardWithDepthLimit(DOWN);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)     camera->ProcessKeyboardWithDepthLimit(UP);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camera->ProcessKeyboardWithDepthLimit(UP);
 
     // Choosing Framebuffers
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) postProcShaderIndex = 1;
@@ -25,9 +24,10 @@ void ProcessInput(GLFWwindow* window, Camera* camera, ushort &postProcShaderInde
     if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) postProcShaderIndex = 5;
 
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-        if (!fPressedLastFrame) { flashlightOn = !flashlightOn; fPressedLastFrame = true; }
+        if (!spacePressedLastFrame) { antialiasingOn = !antialiasingOn; spacePressedLastFrame = true; }
     } else {
-        fPressedLastFrame = false;
+        spacePressedLastFrame = false;
     }
+
     camera->Position = glm::mix(camera->Position, camera->targetPosition, camera->moveSmoothing);
 }
