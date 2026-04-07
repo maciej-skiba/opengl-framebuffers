@@ -23,6 +23,38 @@
 const glm::mat4 identityMatrix = glm::mat4(1.0f);
 extern bool flashlightOn;
 
+unsigned int loadCubemap(std::vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
+
 int main(void)
 {    
     GLFWwindow* window;
@@ -35,9 +67,7 @@ int main(void)
 
     Gui::ImGuiInit(window);
 
-    stbi_set_flip_vertically_on_load(true);
-
-    unsigned int planeVao, planeVbo;
+    unsigned int planeVao, planeVbo, skyboxVao, skyboxVbo;
     
     const char* cubeVertShaderPath = "../shaders/plane/plane_vert.glsl";
     const char* cubeFragShaderPath = "../shaders/plane/plane_frag.glsl";
@@ -49,6 +79,11 @@ int main(void)
         
     Shader houseShader(houseVertShaderPath, houseFragShaderPath);
 
+    const char* skyboxVertShaderPath = "../shaders/skybox/skybox_vert.glsl";
+    const char* skyboxFragShaderPath = "../shaders/skybox/skybox_frag.glsl";
+        
+    Shader skyboxShader(skyboxVertShaderPath, skyboxFragShaderPath);
+
     int numOfVerticesInBox = 36;
 
     glm::vec3 planePosition = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -56,6 +91,7 @@ int main(void)
     
     int boxBufferSize = numOfVerticesInBox * 6;
     CreateBoxVao(planeVao, planeVbo, planeVertices, boxBufferSize);
+    CreateBoxVao(skyboxVao, skyboxVbo, skyboxVertices, boxBufferSize);
 
     //screen quad for postprocessing
     unsigned int quadVAO, quadVBO;
@@ -84,6 +120,7 @@ int main(void)
 
     glm::mat4 planeModelMatrix = identityMatrix;
     glm::mat4 houseModelMatrix = identityMatrix;
+    glm::mat4 skyboxModelMatrix = identityMatrix;
 
     glm::mat4 projectionMatrix = 
         glm::perspective(
@@ -97,6 +134,9 @@ int main(void)
 
     houseShader.UseProgram();
     houseShader.SetUniformMat4("projection", projectionMatrix);
+
+    skyboxShader.UseProgram();
+    skyboxShader.SetUniformMat4("projection", projectionMatrix);
 
     // ---CUSTOM FRAMEBUFFER OBJECTS---
 
@@ -206,6 +246,17 @@ int main(void)
     glm::vec3 dirLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
     bool antialiasingOn = false;
+    std::vector<std::string> faces
+    {
+        "../assets/textures/skybox/right.png",
+        "../assets/textures/skybox/left.png",
+        "../assets/textures/skybox/top.png",
+        "../assets/textures/skybox/bottom.png",
+        "../assets/textures/skybox/front.png",
+        "../assets/textures/skybox/back.png"
+    };
+    
+    unsigned int cubemapTexture = loadCubemap(faces); 
 
     while (!glfwWindowShouldClose(window))
     {
@@ -253,6 +304,19 @@ int main(void)
 
         glDrawArrays(GL_TRIANGLES, 0, numOfVerticesInBox);
 
+        // -------
+
+        // --skybox--
+
+        glDepthFunc(GL_LEQUAL);
+        skyboxShader.UseProgram();
+        skyboxShader.SetUniformMat4("view", 
+            glm::mat4(glm::mat3(mainCamera->GetViewMatrix())));
+        glBindVertexArray(skyboxVao);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, numOfVerticesInBox);
+        glDepthFunc(GL_LESS);
+        
         // -------
 
         // --postprocessing--
