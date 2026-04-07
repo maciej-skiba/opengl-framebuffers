@@ -67,7 +67,7 @@ int main(void)
 
     Gui::ImGuiInit(window);
 
-    unsigned int planeVao, planeVbo, skyboxVao, skyboxVbo;
+    unsigned int boxVao, boxVbo, skyboxVao, skyboxVbo;
     
     const char* cubeVertShaderPath = "../shaders/plane/plane_vert.glsl";
     const char* cubeFragShaderPath = "../shaders/plane/plane_frag.glsl";
@@ -88,9 +88,10 @@ int main(void)
 
     glm::vec3 planePosition = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 planeColor =  glm::vec3(0.15, 0.5, 0.1);  //green
+    glm::vec3 polygonColor =  glm::vec3(0.9, 1, 0.6);; //orange
     
     int boxBufferSize = numOfVerticesInBox * 6;
-    CreateBoxVao(planeVao, planeVbo, planeVertices, boxBufferSize);
+    CreateBoxVao(boxVao, boxVbo, boxVertices, boxBufferSize);
     CreateBoxVao(skyboxVao, skyboxVbo, skyboxVertices, boxBufferSize);
 
     //screen quad for postprocessing
@@ -245,7 +246,7 @@ int main(void)
     glm::vec3 dirLightPosition = glm::vec3(-20.0f, 50.0f, 0.0f);
     glm::vec3 dirLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
-    bool antialiasingOn = false;
+    bool antialiasingOn = true;
     std::vector<std::string> faces
     {
         "../assets/textures/skybox/right.png",
@@ -257,6 +258,73 @@ int main(void)
     };
     
     unsigned int cubemapTexture = loadCubemap(faces); 
+
+    // load height map texture
+    int width, height, nChannels;
+    unsigned char *data = stbi_load(
+        "../assets/heightmaps/iceland_heightmap.png",
+        &width, &height, &nChannels,
+        0);
+
+    // vertex generation
+    std::vector<float> vertices;
+    float yScale = 64.0f / 256.0f, yShift = 25.0f;  // apply a scale+shift to the height data
+    for(unsigned int i = 0; i < height; i++)
+    {
+        for(unsigned int j = 0; j < width; j++)
+        {
+            // retrieve texel for (i,j) tex coord
+            unsigned char* texel = data + (j + width * i) * nChannels;
+            // raw height at coordinate
+            unsigned char y = texel[0];
+
+            // vertex
+            vertices.push_back( -height/2.0f + i );        // v.x
+            vertices.push_back( (int)y * yScale - yShift); // v.y
+            vertices.push_back( -width/2.0f + j );        // v.z
+        }
+    }
+
+    // index generation
+    std::vector<unsigned int> indices;
+    for(unsigned int i = 0; i < height-1; i++)       // for each row a.k.a. each strip
+    {
+        for(unsigned int j = 0; j < width; j++)      // for each column
+        {
+            for(unsigned int k = 0; k < 2; k++)      // for each side of the strip
+            {
+                indices.push_back(j + width * (i + k));
+            }
+        }
+    }
+
+    const unsigned int NUM_STRIPS = height-1;
+    const unsigned int NUM_VERTS_PER_STRIP = width*2;
+
+    // register VAO
+    GLuint terrainVAO, terrainVBO, terrainEBO;
+    glGenVertexArrays(1, &terrainVAO);
+    glBindVertexArray(terrainVAO);
+
+    glGenBuffers(1, &terrainVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
+    glBufferData(GL_ARRAY_BUFFER,
+                vertices.size() * sizeof(float),       // size of vertices buffer
+                &vertices[0],                          // pointer to first element
+                GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glGenBuffers(1, &terrainEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrainEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                indices.size() * sizeof(unsigned int), // size of indices buffer
+                &indices[0],                           // pointer to first element
+                GL_STATIC_DRAW);
+
+
 
     while (!glfwWindowShouldClose(window))
     {
@@ -292,17 +360,43 @@ int main(void)
 
         // -------
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
         // -plane-
-        glBindVertexArray(planeVao);
+        glBindVertexArray(boxVao);
 
         planeShader.UseProgram();
         planeShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
         planeModelMatrix = glm::translate(identityMatrix, planePosition);
         planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(0.5f));
         planeShader.SetUniformMat4("model", planeModelMatrix);
-        planeShader.SetUniformVec3("lightColor", planeColor);
+        planeShader.SetUniformVec3("lightColor", polygonColor);
+        
+        // draw mesh
+        glBindVertexArray(terrainVAO);
+        // render the mesh triangle strip by triangle strip - each row at a time
+        for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
+        {
+            glDrawElements(GL_TRIANGLE_STRIP,   // primitive type
+                        NUM_VERTS_PER_STRIP, // number of indices to render
+                        GL_UNSIGNED_INT,     // index data type
+                        (void*)(sizeof(unsigned int)
+                                    * NUM_VERTS_PER_STRIP
+                                    * strip)); // offset to starting index
+        }
 
-        glDrawArrays(GL_TRIANGLES, 0, numOfVerticesInBox);
+        planeShader.SetUniformVec3("lightColor", planeColor);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
+        {
+            glDrawElements(GL_TRIANGLE_STRIP,   // primitive type
+                        NUM_VERTS_PER_STRIP, // number of indices to render
+                        GL_UNSIGNED_INT,     // index data type
+                        (void*)(sizeof(unsigned int)
+                                    * NUM_VERTS_PER_STRIP
+                                    * strip)); // offset to starting index
+        }
 
         // -------
 
@@ -352,8 +446,8 @@ int main(void)
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &planeVao);
-    glDeleteBuffers(1, &planeVbo);
+    glDeleteVertexArrays(1, &boxVao);
+    glDeleteBuffers(1, &boxVbo);
     glDeleteFramebuffers(1, &multisampleFbo);
 
     glfwTerminate();
